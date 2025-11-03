@@ -17,6 +17,7 @@ async function readCards(page: Page): Promise<{ names: string[]; prices: number[
   return { names, prices, count };
 }
 
+
 test.describe('Inventory sorting & navigation', () => {
   test.beforeEach(async ({ page }) => {
     await login(page, 'standard_user', 'secret_sauce');
