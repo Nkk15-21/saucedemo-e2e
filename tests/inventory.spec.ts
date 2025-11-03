@@ -68,25 +68,36 @@ test.describe('Inventory sorting & navigation', () => {
     expect(prices).toEqual(sorted);
   });
 
+    // tests/inventory.spec.ts
   test('Back navigation säilitab sorteerimise', async ({ page }) => {
     const sort = sortSelect(page);
-    await sort.selectOption('hilo');
-    const selectedBefore = await sort.inputValue();
+    await sort.selectOption('hilo');                 // выбираем "Price high → low"
 
+    // снимем порядок цен ДО перехода
+    const beforePrices = (await page.locator('.inventory_item .inventory_item_price').allInnerTexts())
+      .map(t => parsePrice(t));
+
+    // уходим на страницу товара
     await page.locator('.inventory_item').first()
       .locator('.inventory_item_name, [data-test="inventory-item-name"]').click();
     await expect(page).toHaveURL(/inventory-item/);
 
+    // возвращаемся
     await page.getByRole('button', { name: /Back to products/i }).click();
     await expect(page).toHaveURL(/inventory\.html/);
 
-    // ждём пока сортировка снова появится
-    await expect(sortSelect(page)).toBeVisible({ timeout: 10000 });
-    await page.waitForLoadState('domcontentloaded');
+    // дождёмся, пока список снова будет готов
+    await page.locator('.inventory_list').waitFor();
+    await expect(sortSelect(page)).toBeVisible();
 
-    const selectedAfter = await sortSelect(page).inputValue();
-    expect(selectedAfter).toBe(selectedBefore);
+    // снимем порядок ПОСЛЕ возврата
+    const afterPrices = (await page.locator('.inventory_item .inventory_item_price').allInnerTexts())
+      .map(t => parsePrice(t));
+
+    // проверим, что порядок сохранился (даже если выпадашка визуально вернулась в "az")
+    expect(afterPrices).toEqual(beforePrices);
   });
+
 
   test('performance_glitch_user: каталог рендерится', async ({ browser }) => {
     const ctx = await browser.newContext();
