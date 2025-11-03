@@ -11,5 +11,16 @@
   "devDependencies": {
     "@playwright/test": "^1.56.1",
     "@types/node": "^24.10.0"
-  }
+  },
+  "directories": {
+    "test": "tests"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Nkk15-21/saucedemo-e2e.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Nkk15-21/saucedemo-e2e/issues"
+  },
+  "homepage": "https://github.com/Nkk15-21/saucedemo-e2e#readme"
 }

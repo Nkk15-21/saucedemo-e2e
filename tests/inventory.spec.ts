@@ -2,6 +2,13 @@ import { test, expect, Page } from '@playwright/test';
 import { login } from '../fixtures/auth';
 import { byNameAsc, byNameDesc, byPriceAsc, byPriceDesc, parsePrice } from '../helpers/sorting';
 
+function sortSelect(page: Page) {
+  // Универсальный локатор: data-test или класс
+  return page.locator(
+    'select[data-test="product_sort_container"], select.product_sort_container, [data-test="product_sort_container"]'
+  );
+}
+
 async function readCards(page: Page): Promise<{ names: string[]; prices: number[]; count: number }> {
   const cards = page.locator('.inventory_item');
   const count = await cards.count();
@@ -17,44 +24,54 @@ async function readCards(page: Page): Promise<{ names: string[]; prices: number[
   return { names, prices, count };
 }
 
-
 test.describe('Inventory sorting & navigation', () => {
   test.beforeEach(async ({ page }) => {
     await login(page, 'standard_user', 'secret_sauce');
     await page.locator('.inventory_list').waitFor();
+    await expect(sortSelect(page)).toBeVisible({ timeout: 10000 });
   });
 
   test('Name (A to Z)', async ({ page }) => {
-    await page.locator('[data-test="product_sort_container"]').selectOption('az');
+    const sort = sortSelect(page);
+    await sort.scrollIntoViewIfNeeded();
+    await sort.selectOption('az');
+
     const { names } = await readCards(page);
     const sorted = [...names].sort(byNameAsc);
     expect(names).toEqual(sorted);
   });
 
   test('Name (Z to A)', async ({ page }) => {
-    await page.locator('[data-test="product_sort_container"]').selectOption('za');
+    const sort = sortSelect(page);
+    await sort.selectOption('za');
+
     const { names } = await readCards(page);
     const sorted = [...names].sort(byNameDesc);
     expect(names).toEqual(sorted);
   });
 
   test('Price (low to high)', async ({ page }) => {
-    await page.locator('[data-test="product_sort_container"]').selectOption('lohi');
+    const sort = sortSelect(page);
+    await sort.selectOption('lohi');
+
     const { prices } = await readCards(page);
     const sorted = [...prices].sort(byPriceAsc);
     expect(prices).toEqual(sorted);
   });
 
   test('Price (high to low)', async ({ page }) => {
-    await page.locator('[data-test="product_sort_container"]').selectOption('hilo');
+    const sort = sortSelect(page);
+    await sort.selectOption('hilo');
+
     const { prices } = await readCards(page);
     const sorted = [...prices].sort(byPriceDesc);
     expect(prices).toEqual(sorted);
   });
 
   test('Back navigation säilitab sorteerimise', async ({ page }) => {
-    await page.locator('[data-test="product_sort_container"]').selectOption('hilo');
-    const selectedBefore = await page.locator('[data-test="product_sort_container"]').inputValue();
+    const sort = sortSelect(page);
+    await sort.selectOption('hilo');
+    const selectedBefore = await sort.inputValue();
 
     await page.locator('.inventory_item').first()
       .locator('.inventory_item_name, [data-test="inventory-item-name"]').click();
@@ -63,7 +80,11 @@ test.describe('Inventory sorting & navigation', () => {
     await page.getByRole('button', { name: /Back to products/i }).click();
     await expect(page).toHaveURL(/inventory\.html/);
 
-    const selectedAfter = await page.locator('[data-test="product_sort_container"]').inputValue();
+    // ждём пока сортировка снова появится
+    await expect(sortSelect(page)).toBeVisible({ timeout: 10000 });
+    await page.waitForLoadState('domcontentloaded');
+
+    const selectedAfter = await sortSelect(page).inputValue();
     expect(selectedAfter).toBe(selectedBefore);
   });
 
@@ -77,7 +98,7 @@ test.describe('Inventory sorting & navigation', () => {
     await expect(p).toHaveURL(/inventory\.html/);
 
     const items = p.locator('.inventory_list .inventory_item');
-    expect(await items.count()).toBeGreaterThan(0); // <-- фикс матчера
+    expect(await items.count()).toBeGreaterThan(0);
 
     await items.first().locator('.inventory_item_name, [data-test="inventory-item-name"]').click();
     await expect(p.getByRole('button', { name: /Back to products/i })).toBeVisible();

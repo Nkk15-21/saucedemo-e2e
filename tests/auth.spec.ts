@@ -19,7 +19,7 @@ test.describe('Auth', () => {
     await expect(page).toHaveURL('https://www.saucedemo.com/');
   });
 
-  test('пустые поля → требуемые сообщения', async ({ page }) => {
+  test('пустые поля → нужные сообщения', async ({ page }) => {
     await page.goto('https://www.saucedemo.com/');
     await page.getByRole('button', { name: 'Login' }).click();
     await expect(page.getByText('Username is required')).toBeVisible();
@@ -40,7 +40,7 @@ test.describe('Auth', () => {
     await expect(page).toHaveURL('https://www.saucedemo.com/');
   });
 
-  // Доп. кейсы из "Uued testcase`id"
+  // redirect tests
   test('direct /inventory ilma sisselogimiseta → redirect /', async ({ page }) => {
     await page.goto('https://www.saucedemo.com/inventory.html');
     await expect(page).toHaveURL('https://www.saucedemo.com/');
